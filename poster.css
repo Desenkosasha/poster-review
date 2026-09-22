@@ -1,0 +1,380 @@
+/* poster.css — Efferon Carousel Studio: the "P2 · airier" poster stylesheet.
+ * Ported verbatim from poster-explore/p2-airy.html and namespaced ENTIRELY
+ * under `.poster` so it can never touch the carousel's `.art` DOM.
+ *
+ * This file is linked from the APP ROOT (efferon-dataviz/), so all asset URLs
+ * (@font-face, logo, product, illustration) are written relative to the root:
+ * `assets/...`. When a page in a sub-folder links `../poster.css`, the browser
+ * still resolves these urls relative to THIS css file's location (the root).
+ */
+
+/* ---------- fonts (paths relative to app root) ---------- */
+@font-face{font-family:'Gotham Pro';src:url('assets/fonts/gothampro_bold.ttf') format('truetype');font-weight:700;font-style:normal;font-display:block;}
+@font-face{font-family:'Gotham Pro';src:url('assets/fonts/gothampro_medium.ttf') format('truetype');font-weight:500;font-style:normal;font-display:block;}
+@font-face{font-family:'Gotham Pro';src:url('assets/fonts/gothampro.ttf') format('truetype');font-weight:400;font-style:normal;font-display:block;}
+@font-face{font-family:'Gotham Pro';src:url('assets/fonts/gothampro_light.ttf') format('truetype');font-weight:300;font-style:normal;font-display:block;}
+
+/* ---------- poster root ---------- */
+.poster{
+  --ink:#2b2f56; --blue:#4568a9; --coral:#e16f79; --violet:#896896;
+  --teal:#21b9aa;
+  --mute:#7d7d93; --mute2:#b3b3c1; --paper:#ffffff;
+  --panel-blue:#4568a9;
+  --panel-soft:#eaf0f8;
+  --panel-line:rgba(43,47,86,.12);
+
+  /* Width is fixed (the whole layout is designed against 1400px); HEIGHT IS FREE.
+     These posters are read on screen on the distributor portal, not printed on
+     A4 boards, so a fixed 990px canvas only ever hurt: number-heavy studies
+     overflowed and lost their conclusion, while review/descriptive ones left a
+     third of the page blank. min-height keeps a short poster from looking
+     stunted; overflow:hidden stays only to clip the decorative blobs. */
+  width:1400px;min-height:660px;
+  background:var(--paper);position:relative;overflow:hidden;
+  padding:42px 56px 38px;
+  box-sizing:border-box;
+  font-family:'Gotham Pro',sans-serif;color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+.poster *{box-sizing:border-box;margin:0;padding:0;}
+.poster .grad{background:linear-gradient(90deg,#4568a9 0%,#7d6098 52%,#bd7b96 100%);color:#fff;}
+
+/* faint decorative texture */
+.poster::before{content:"";position:absolute;top:-120px;right:-140px;width:640px;height:640px;
+  background:radial-gradient(circle at 50% 50%,rgba(69,104,169,.06),transparent 62%);
+  pointer-events:none;}
+.poster::after{content:"";position:absolute;left:-160px;bottom:120px;width:520px;height:520px;
+  background:radial-gradient(circle at 50% 50%,rgba(225,111,121,.05),transparent 60%);
+  pointer-events:none;}
+
+/* ---------- emphasis tint (matches richText() output from deck-render.js) ---------- */
+.poster .tint{border-radius:.42em;padding:.06em .34em;font-weight:500;
+  box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.poster .tint-coral{background:rgba(225,111,121,.16);color:#c65860;}
+.poster .tint-violet{background:rgba(137,104,150,.18);color:#7a5b88;}
+.poster .tint-blue{background:rgba(69,104,169,.15);color:#3f5f9c;}
+/* on dark grounds (blue panel, gradient banner, conclusion) the light tints
+   go invisible — flip them to a white wash, same as the carousel cover-hero */
+.poster .panel.blue .tint,
+.poster .obj .tint,
+.poster .conclusion .tint{background:rgba(255,255,255,.2);color:#fff;}
+
+/* ---------- provenance line (first thing on the poster) ---------- */
+/* Journal, authors, device, DOI. Deliberately the quietest type on the page:
+   it places the paper before the reader starts on the findings. This replaced
+   the old footer citation — the same facts, read first instead of last. */
+.poster .p-meta{position:relative;z-index:2;font-weight:400;font-size:11.5px;line-height:1.5;
+  color:var(--mute);letter-spacing:.012em;
+  padding-bottom:13px;margin-bottom:17px;border-bottom:1px solid rgba(43,47,86,.09);}
+
+/* ---------- header ---------- */
+.poster .head{display:flex;align-items:flex-start;justify-content:space-between;gap:40px;
+  position:relative;z-index:2;}
+.poster .eyebrow{font-weight:500;font-size:13px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--blue);margin-bottom:14px;}
+.poster .p-title{font-weight:700;font-size:34px;line-height:1.1;letter-spacing:-.01em;max-width:900px;}
+/* title highlight = a soft BRAND-BLUE pill (Efferon house style), never the
+   red/coral pill — coral reads as an alert/warning, blue is the brand voice. */
+.poster .p-title .hl{display:inline-block;background:rgba(69,104,169,.14);color:#3f5f9c;
+  padding:.02em .3em;border-radius:9px;}
+.poster .logo{flex:0 0 auto;margin-top:4px;}
+.poster .logo img{height:44px;display:block;}
+
+/* ---------- intro / problem (full-width lead line) ---------- */
+.poster .intro{position:relative;z-index:2;margin-top:14px;}
+.poster .intro p{font-weight:400;font-size:16px;line-height:1.5;color:#3a3f66;max-width:1200px;}
+.poster .intro b{font-weight:700;color:var(--ink);}
+
+/* ---------- lead row: study design (left) + objective banner (right) ------ */
+.poster .lead-row{position:relative;z-index:2;display:grid;grid-template-columns:60% 1fr;
+  gap:24px;margin-top:16px;align-items:stretch;}
+.poster .lead-row.full{grid-template-columns:1fr;}
+.poster .lead-main{display:flex;}
+.poster .lead-main .panel{flex:1;}
+.poster .lead-side{display:flex;}
+
+/* the objective banner — the single restrained gradient accent, white text */
+.poster .obj{flex:1;border-radius:18px;padding:22px 28px;display:flex;flex-direction:column;
+  justify-content:flex-start;}
+.poster .obj-k{font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.82);margin-bottom:10px;}
+.poster .obj-t{font-weight:500;font-size:17px;line-height:1.4;color:#fff;}
+.poster .obj-t b{font-weight:700;}
+
+.poster .panel{border-radius:18px;padding:22px 26px;display:flex;flex-direction:column;}
+.poster .panel.blue{background:var(--panel-blue);color:#fff;}
+.poster .panel.soft{background:var(--panel-soft);}
+.poster .p-kicker{font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  margin-bottom:11px;}
+.poster .panel.blue .p-kicker{color:#c9d6ec;}
+.poster .panel.soft .p-kicker{color:var(--blue);}
+.poster .p-text{font-weight:400;font-size:14.5px;line-height:1.5;}
+.poster .panel.blue .p-text{color:#e9eefa;}
+.poster .panel.soft .p-text{color:#3a3f66;}
+.poster .p-text + .p-text{margin-top:10px;}
+.poster .p-text b{font-weight:700;}
+.poster .panel.blue .p-text b{color:#fff;}
+.poster .panel.soft .p-text b{color:var(--ink);}
+.poster .divider{height:1px;background:rgba(255,255,255,.18);margin:15px 0 0;}
+.poster .panel.soft .divider{background:var(--panel-line);}
+
+/* panel stat mini-row (value + label) */
+.poster .p-stats{display:flex;gap:26px;margin-top:16px;flex-wrap:wrap;}
+.poster .p-stat{display:flex;flex-direction:column;gap:2px;}
+.poster .p-stat-v{font-weight:500;font-size:26px;line-height:1.05;letter-spacing:-.008em;}
+.poster .panel.blue .p-stat-v{color:#fff;}
+.poster .panel.soft .p-stat-v{color:var(--ink);}
+.poster .p-stat-l{font-weight:500;font-size:11.5px;letter-spacing:.04em;line-height:1.25;}
+.poster .panel.blue .p-stat-l{color:#c9d6ec;}
+.poster .panel.soft .p-stat-l{color:var(--mute);}
+
+/* drug / tag pills (chips) */
+.poster .drug-row{display:flex;gap:18px;align-items:flex-start;}
+.poster .drug-row > .drug-body{flex:1;}
+.poster .drug-names{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;}
+.poster .pill-drug{background:#fff;border:1px solid var(--panel-line);color:var(--blue);
+  font-weight:500;font-size:12.5px;padding:5px 12px;border-radius:999px;}
+.poster .panel.blue .pill-drug{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22);color:#fff;}
+.poster .product{flex:0 0 92px;align-self:center;display:flex;align-items:center;justify-content:center;}
+.poster .product img{max-height:138px;max-width:100%;filter:drop-shadow(0 12px 20px rgba(43,47,86,.22));}
+
+/* info chips (kept for parity with P2; namespaced, currently unused by render) */
+.poster .chips{display:flex;gap:12px;margin-top:auto;padding-top:16px;}
+.poster .chip{flex:1;background:#fff;border:1px solid var(--panel-line);border-radius:12px;
+  padding:11px 13px;display:flex;gap:9px;align-items:flex-start;}
+.poster .chip .bang{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--coral);
+  color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;
+  margin-top:1px;}
+.poster .chip span{font-size:12.5px;line-height:1.35;color:#3a3f66;font-weight:400;}
+.poster .chip span b{font-weight:700;color:var(--ink);}
+
+/* ---------- drugs strip (slim, wide, low band under the lead row) ---------- */
+.poster .drugs{position:relative;z-index:2;margin-top:14px;}
+.poster .drug-strip{background:var(--panel-soft);border-radius:16px;padding:15px 26px;
+  display:flex;align-items:center;gap:30px;}
+.poster .drug-strip + .drug-strip{margin-top:12px;}
+.poster .drug-strip .ds-main{flex:1;min-width:0;}
+.poster .drug-strip .ds-k{font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--blue);margin-bottom:6px;}
+.poster .drug-strip .ds-text{font-weight:400;font-size:13.5px;line-height:1.45;color:#3a3f66;}
+.poster .drug-strip .ds-text b{font-weight:700;color:var(--ink);}
+.poster .drug-strip .ds-chips{flex:0 0 auto;max-width:42%;display:flex;flex-wrap:wrap;gap:7px;
+  justify-content:flex-end;}
+.poster .drug-strip .drug-names{margin-top:0;}
+
+/* ---------- specifics band (the one fixed slot before the results) ---------- */
+/* One band, one position, one look. What varies between papers is only how many
+   columns it holds — never whether it is a strip, a list, or a pair of boxes. */
+.poster .specifics{position:relative;z-index:2;margin-top:14px;background:var(--panel-soft);
+  border-radius:16px;padding:16px 26px 17px;display:grid;gap:18px 34px;align-items:start;}
+.poster .specifics.c1{grid-template-columns:1fr;}
+.poster .specifics.c2{grid-template-columns:1fr 1fr;}
+.poster .specifics.c3{grid-template-columns:repeat(3,1fr);}
+.poster .sp-k{font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--blue);margin-bottom:7px;}
+.poster .sp-text{font-weight:400;font-size:13.5px;line-height:1.45;color:#3a3f66;}
+.poster .sp-text b{font-weight:700;color:var(--ink);}
+.poster .sp-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+.poster .sp-list{list-style:none;display:grid;gap:7px;}
+.poster .sp-list li{position:relative;padding-left:18px;font-weight:400;font-size:13.5px;
+  line-height:1.35;color:#3a3f66;}
+.poster .sp-list li b{font-weight:700;color:var(--ink);}
+.poster .sp-list li::before{content:"";position:absolute;left:1px;top:6px;width:8px;height:8px;
+  border-radius:50%;background:var(--blue);opacity:.85;}
+
+/* ---------- results block ---------- */
+.poster .results{position:relative;z-index:2;}
+/* The lead sentence is the most important line in the results block, and set as
+   bare dark text on white next to a strong pill it read as a caption and got
+   lost. On its own soft band it reads as one unit with the pill: a section
+   opener, not a stray line. */
+.poster .results-head{display:flex;align-items:flex-start;gap:18px;margin-top:14px;
+  background:var(--panel-soft);border-radius:14px;padding:15px 22px 16px;}
+/* the "Results" pill — a clean lozenge, real padding, vertically centred */
+.poster .results-pill{flex:0 0 auto;display:inline-flex;align-items:center;background:var(--blue);
+  color:#fff;font-weight:700;font-size:13px;letter-spacing:.16em;text-transform:uppercase;
+  line-height:1;padding:7px 18px;border-radius:99px;}
+.poster .results-note{font-weight:500;font-size:16px;line-height:1.4;color:var(--ink);padding-top:1px;}
+.poster .results-note b{font-weight:700;}
+
+/* ---------- result cards ("quiet card, locked baseline") ---------- */
+/* align-items:stretch — every card in a row is as tall as the row. A chart card
+   is inevitably taller than a figure card, and with cards sized to their own
+   content that left a punched-out white gap under the short ones. Stretching is
+   safe here BECAUSE the heading reserve and the value row are top-anchored with
+   fixed heights: the figures stay on their shared baseline however tall the card
+   grows (this is why the older centred card could not do it — its figure was
+   flex:1 + centred, so a taller card moved the number). */
+.poster .stats{position:relative;z-index:2;display:grid;align-items:stretch;
+  grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px;}
+/* the plot row sits under the figure row with the same gap between them */
+.poster .stats.plots{margin-top:14px;}
+/* Flat tint, no border, no shadow: five bordered-and-shadowed white boxes on a
+   white poster were most of the noise in this row. The tint alone separates a
+   card from the page. */
+.poster .stat{min-width:0;background:#f5f7fb;border:0;border-radius:12px;box-shadow:none;
+  padding:16px 18px 15px;display:flex;flex-direction:column;justify-content:flex-start;}
+/* GUARD: the app (carousel-studio.html) carries a global carousel rule
+   `.stat + .stat { padding-left:48px; padding-right:0; border-left:… }` for its
+   OWN side-by-side stat numbers. It has the same specificity as `.poster .stat`
+   but is declared later, so it hijacked the padding of every poster card AFTER
+   the first. Re-assert poster padding at higher specificity (3 classes) so the
+   carousel rule can never reach a poster card, regardless of source order. */
+.poster .stats .stat + .stat{padding-left:18px;padding-right:18px;border-left:none;}
+
+/* heading — small caps in brand blue. min-height reserves TWO lines, which is
+   what locks the baseline: a card titled "Biomarkers decreased in the Efferon®
+   LPS group only" no longer pushes its value below its neighbours'. */
+.poster .stat .rk{font-weight:700;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--blue);line-height:1.35;min-height:29px;}
+.poster .stat .rk b{font-weight:700;}
+
+/* the value row — fixed height, bottom-aligned, one shared baseline per row */
+.poster .stat .rv{min-height:46px;display:flex;align-items:flex-end;margin-top:10px;}
+.poster .stat .rv .num{font-weight:500;font-size:32px;line-height:1;letter-spacing:-.014em;
+  color:var(--ink);}
+.poster .stat .rv .num .pct{font-size:.44em;font-weight:500;color:var(--mute);
+  vertical-align:baseline;margin-left:.1em;}
+/* A verdict is not a figure: "Reduced" / "No significant improvement" set at the
+   number's size read as three lines of shouting. Smaller, bolder, as a phrase. */
+.poster .stat .rv.is-word .num{font-size:21px;font-weight:700;line-height:1.2;letter-spacing:0;}
+.poster .stat .rv.is-phrase .num{font-size:20px;font-weight:700;line-height:1.24;letter-spacing:0;}
+
+/* a SET of same-unit measurements in one card: figures on one baseline, each
+   with its own label. Not a chart, because nothing here is being compared —
+   bars would assert a ranking the study never claimed. */
+/* Same margin-top and same 46px bottom-aligned box as a single value (.rv), so a
+   set card's figures land on the SAME baseline as the plain figures beside it. */
+.poster .stat .rvset{display:flex;flex-wrap:wrap;gap:10px 30px;margin-top:10px;}
+.poster .stat .rvitem{min-width:0;}
+.poster .stat .rvset .num{min-height:46px;display:flex;align-items:flex-end;
+  font-weight:500;font-size:27px;line-height:1;letter-spacing:-.012em;color:var(--ink);}
+.poster .stat .rvset .num .pct{font-size:.46em;font-weight:500;color:var(--mute);
+  vertical-align:baseline;margin-left:.08em;}
+.poster .stat .rvlab{font-weight:400;font-size:12px;line-height:1.3;color:var(--mute);margin-top:5px;}
+
+/* the footnote — sub + unitLabel on ONE quiet line under a hairline */
+/* margin-top:auto — the footnote sits on the card's bottom edge, so the hairline
+   above it lines up across the whole row and the extra height of a stretched
+   card reads as air inside the card instead of a hole beside it. */
+.poster .stat .rsub{font-weight:400;font-size:11.5px;line-height:1.4;color:var(--mute);
+  margin-top:auto;padding-top:9px;border-top:1px solid rgba(43,47,86,.09);}
+.poster .stat .rv{flex:0 0 auto;}
+.poster .stat .rsub b{font-weight:500;color:var(--ink);}
+
+/* chart fills the remaining card height and centres — no empty gap, bars/curves
+   use the vertical space so a narrow card still reads */
+/* block (NOT flex) so an inline SVG with a viewBox reliably takes width:100% —
+   flex + svg intrinsic-size shrinks it and left-biases the content */
+.poster .chartwrap{margin-top:12px;flex:1 1 auto;min-height:0;display:block;}
+/* Height cap: the bars primitive uses a taller-than-wide viewBox (300×280) so it
+   fills a narrow card, but at a third of the poster's width that came out ~430px
+   tall — three times its neighbours, which tore a hole in the row. The cap bites
+   only on the near-square primitives; a line/km chart (744×250) is well under
+   it and renders exactly as before. */
+.poster .chartwrap svg{width:100%;height:auto;max-height:220px;display:block;}
+.poster .legend{display:flex;gap:18px;margin-top:10px;}
+.poster .legend .lg{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mute);
+  font-weight:500;}
+.poster .legend .sw{width:18px;height:3px;border-radius:2px;}
+
+/* donut card (SOFA change): ring above a caption; two side by side for a pair */
+.poster .donut-wrap{margin-top:12px;flex:1 1 auto;min-height:0;
+  display:flex;flex-direction:column;justify-content:center;}
+.poster .donut-row{display:flex;gap:22px;flex-wrap:wrap;justify-content:flex-start;}
+.poster .donut-item{flex:1 1 0;min-width:0;display:flex;flex-direction:column;
+  align-items:center;text-align:center;gap:10px;}
+.poster .donut-svg{flex:0 0 auto;width:96px;height:96px;display:block;}
+.poster .donut-cap{font-weight:400;font-size:12.5px;line-height:1.36;color:#3a3f66;}
+.poster .donut-cap b{font-weight:700;color:var(--ink);}
+
+/* ---------- hospitals panel (bulleted list of institutions) ---------- */
+.poster .hospitals{position:relative;z-index:2;margin-top:14px;background:var(--panel-soft);
+  border-radius:16px;padding:15px 26px 16px;}
+.poster .hos-k{font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--blue);margin-bottom:10px;}
+.poster .hos-list{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px 26px;}
+.poster .hos-list li{position:relative;padding-left:20px;font-weight:400;font-size:13.5px;
+  line-height:1.35;color:#3a3f66;}
+.poster .hos-list li b{font-weight:700;color:var(--ink);}
+.poster .hos-list li::before{content:"";position:absolute;left:2px;top:6px;width:9px;height:9px;
+  border-radius:50%;background:var(--blue);opacity:.85;}
+
+/* hospitals + methods side by side (sepsis layout) */
+.poster .mid-row{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;
+  gap:24px;margin-top:14px;align-items:stretch;}
+.poster .mid-row .hospitals,.poster .mid-row .drugs{margin-top:0;}
+.poster .mid-row .hospitals{display:flex;flex-direction:column;}
+.poster .mid-row .hos-list{grid-template-columns:repeat(2,1fr);gap:8px 20px;}
+.poster .mid-row .drug-strip{height:100%;align-items:flex-start;}
+
+/* ---------- conclusion strip ---------- */
+.poster .conclusion{position:relative;z-index:2;margin-top:11px;background:var(--ink);
+  border-radius:18px;padding:18px 30px;display:flex;align-items:center;gap:26px;
+  overflow:hidden;}
+.poster .conclusion .cpill{flex:0 0 auto;background:rgba(255,255,255,.12);color:#fff;
+  font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  padding:9px 18px;border-radius:999px;}
+.poster .conclusion .ctext{color:#eef1fb;font-weight:400;font-size:17px;line-height:1.45;flex:1;
+  padding-right:150px;}
+.poster .conclusion .ctext b{font-weight:700;color:#fff;}
+.poster .conclusion .ctext .coralw{color:var(--coral);font-weight:700;}
+/* The bead is decorative. It used to be anchored bottom:-46px to bleed below
+   the box — but .conclusion has overflow:hidden, so it was sliced flat and read
+   as a rendering bug rather than a flourish (and with content-driven poster
+   height there is no white space underneath to bleed onto any more). Centre it
+   inside the box instead: same accent, nothing amputated. */
+.poster .conclusion .microbe{position:absolute;right:34px;top:0;bottom:0;width:150px;
+  display:flex;align-items:center;justify-content:center;opacity:.85;pointer-events:none;}
+.poster .conclusion .microbe img{max-width:100%;max-height:calc(100% - 12px);object-fit:contain;}
+.poster .conclusion .microbe img{width:100%;}
+
+/* ---------- provenance footer (journal / DOI / registry id) ---------- */
+/* Deliberately quiet: the poster's job is the results, but a distributor has to
+   be able to trace it back to the paper. Sits after the conclusion. */
+.poster .p-cite{position:relative;z-index:2;margin-top:14px;font-weight:400;font-size:12.5px;
+  line-height:1.45;color:var(--mute);letter-spacing:.01em;}
+
+/* ================= descriptive template (reviews) ================= */
+/* A review abstract is 380 to 900 characters. On the 1400px study sheet that can
+   only read as stretched, so this template gets a narrower canvas (set inline by
+   renderPoster from TEMPLATE_CANVAS) and ONE scale factor --s that lifts every
+   type role together. Height follows the content: min-height is released, since
+   the 660px floor is exactly what left a short review sitting in white. */
+.poster.descriptive{
+  --s:1.18;
+  min-height:0;
+  padding:calc(38px * var(--s)) calc(46px * var(--s)) calc(34px * var(--s));
+  display:flex;flex-direction:column;
+}
+.poster.descriptive .p-meta{font-size:calc(11.5px * var(--s));
+  padding-bottom:calc(12px * var(--s));margin-bottom:calc(15px * var(--s));}
+.poster.descriptive .eyebrow{font-size:calc(12px * var(--s));margin-bottom:calc(11px * var(--s));}
+.poster.descriptive .p-title{font-size:calc(33px * var(--s));line-height:1.14;max-width:none;}
+.poster.descriptive .logo img{height:calc(40px * var(--s));}
+
+/* the thesis: the one sentence that is the paper's point */
+.poster.descriptive .d-thesis{margin-top:calc(20px * var(--s));font-weight:500;
+  font-size:calc(24px * var(--s));line-height:1.38;letter-spacing:-.006em;color:var(--ink);}
+.poster.descriptive .d-rule{height:1px;background:var(--panel-line);
+  margin:calc(20px * var(--s)) 0 calc(17px * var(--s));}
+
+/* the running text, read once and never restated */
+.poster.descriptive .d-body p{font-weight:400;font-size:calc(16px * var(--s));line-height:1.62;color:#3a3f66;}
+.poster.descriptive .d-body p + p{margin-top:calc(10px * var(--s));}
+.poster.descriptive .d-body b{font-weight:700;color:var(--ink);}
+
+/* the paper's own vocabulary */
+.poster.descriptive .d-topics{margin-top:calc(20px * var(--s));}
+.poster.descriptive .d-tk{font-weight:700;font-size:calc(10.5px * var(--s));letter-spacing:.11em;
+  text-transform:uppercase;color:var(--mute2);margin-bottom:calc(9px * var(--s));}
+.poster.descriptive .d-chips{display:flex;flex-wrap:wrap;gap:calc(7px * var(--s));}
+.poster.descriptive .d-chips span{background:var(--panel-soft);color:var(--blue);font-weight:500;
+  font-size:calc(13px * var(--s));padding:calc(6px * var(--s)) calc(12px * var(--s));border-radius:999px;}
+
+/* optional decorative closing band, full bleed. Never data: it absorbs leftover
+   height on a very short review so the sheet is full without stretching type. */
+.poster.descriptive .d-illo{margin:calc(22px * var(--s)) calc(-46px * var(--s)) calc(-34px * var(--s));
+  flex:1 1 auto;min-height:calc(120px * var(--s));max-height:32%;overflow:hidden;}
+.poster.descriptive .d-illo img{width:100%;height:100%;object-fit:cover;object-position:center 42%;display:block;}

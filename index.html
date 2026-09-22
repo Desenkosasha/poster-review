@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Efferon — каталог постеров</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="poster.css?v=21">
+<style>
+  :root{
+    --ink:#2b2f56; --blue:#4568a9; --coral:#e16f79; --violet:#896896;
+    --mute:#7d7d93; --mute2:#b3b3c1;
+    --line:rgba(43,47,86,.12);
+    --bg:#f4f4f7;
+    --amber:#b07c2d; --amber-bg:rgba(214,158,63,.10); --amber-line:rgba(214,158,63,.32);
+    --shell-pad:22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Gotham Pro',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+
+  /* ---------- the lock ---------- */
+  #gate{
+    position:fixed;inset:0;z-index:50;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  /* display:flex outranks the [hidden] default, and an invisible fixed layer
+     still swallows every click — so hiding it has to be said explicitly */
+  #gate[hidden],#head[hidden],#main[hidden],.list-wrap[hidden]{display:none;}
+  .gate-card{
+    width:100%;max-width:380px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;padding:30px 30px 26px;
+    box-shadow:0 20px 50px -30px rgba(52,38,72,.4);
+  }
+  .gate-card img{height:26px;display:block;margin-bottom:22px;}
+  .gate-card h1{font-size:16px;font-weight:700;margin:0 0 6px;}
+  .gate-card p{font-size:12.5px;line-height:1.5;color:var(--mute);margin:0 0 20px;}
+  .gate-card label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--mute2);margin-bottom:7px;}
+  .gate-card input{
+    width:100%;font-family:inherit;font-size:14px;padding:11px 13px;color:var(--ink);
+    border:1px solid var(--line);border-radius:9px;background:#fff;outline:none;
+  }
+  .gate-card input:focus{border-color:rgba(69,104,169,.55);}
+  .gate-card button{
+    width:100%;margin-top:12px;font-family:inherit;font-size:13.5px;font-weight:500;
+    padding:11px;border:0;border-radius:9px;background:var(--blue);color:#fff;cursor:pointer;
+  }
+  .gate-card button:disabled{opacity:.55;cursor:default;}
+  .gate-err{font-size:12px;color:#c04a55;margin-top:11px;min-height:16px;}
+
+  /* ---------- top bar ---------- */
+  header{
+    flex:0 0 auto;background:#fff;border-bottom:1px solid var(--line);
+    padding:14px var(--shell-pad) 12px;
+  }
+  .brow{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+  h1.t{font-size:14px;font-weight:700;letter-spacing:.01em;margin:0;}
+  .sub{font-size:12px;color:var(--mute);}
+  .tabs{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;align-items:center;}
+  .tab{
+    position:relative;
+    font-family:inherit;font-size:12px;font-weight:500;line-height:1;
+    padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;color:var(--ink);cursor:pointer;min-width:38px;
+    font-variant-numeric:tabular-nums;transition:border-color .12s,background .12s,color .12s;
+  }
+  .tab:hover{border-color:rgba(69,104,169,.45);}
+  .tab.on{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .tab.rev::after{content:"·R";font-size:9px;opacity:.55;margin-left:2px;vertical-align:top;}
+  /* a poster the check found gaps in wears a dot */
+  .tab.gap{border-color:var(--amber-line);}
+  .tab.gap:not(.on)::before{
+    content:"";position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;
+    background:#d69e3f;
+  }
+  .tab.wide{min-width:0;padding:7px 12px;}
+  .count{font-size:11px;color:var(--mute2);margin-left:6px;}
+  .spacer{flex:1 1 auto;}
+
+  /* ---------- split ---------- */
+  main{flex:1 1 auto;display:flex;min-height:0;}
+  .src{
+    flex:0 0 clamp(360px,33%,560px);min-width:0;
+    background:#fff;border-right:1px solid var(--line);
+    overflow-y:auto;padding:26px 28px 60px;
+  }
+  .src .kicker{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute2);margin-bottom:14px;}
+  .src h2{font-size:19px;line-height:1.3;font-weight:700;margin:0 0 14px;}
+  .meta{display:flex;flex-direction:column;gap:5px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--line);}
+  .meta div{font-size:12px;line-height:1.45;color:var(--mute);}
+  .meta span{color:var(--ink);font-weight:500;}
+  .meta a{color:var(--blue);text-decoration:none;}
+  .meta a:hover{text-decoration:underline;}
+  .abs-label{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute2);margin-bottom:9px;}
+  .abs{font-size:14px;line-height:1.65;color:#3b3f63;white-space:pre-wrap;}
+  .abs p{margin:0 0 12px;}
+
+  .out{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;}
+  .out-bar{
+    flex:0 0 auto;display:flex;align-items:center;gap:10px;
+    padding:10px var(--shell-pad);background:#fff;border-bottom:1px solid var(--line);
+  }
+  .out-bar .lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute2);margin-right:auto;}
+  .zoom{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .zoom button{font-family:inherit;font-size:11.5px;padding:6px 11px;border:0;background:#fff;color:var(--mute);cursor:pointer;}
+  .zoom button + button{border-left:1px solid var(--line);}
+  .zoom button.on{background:var(--blue);color:#fff;}
+  .dims{font-size:11px;color:var(--mute2);font-variant-numeric:tabular-nums;}
+  .stage-scroll{flex:1 1 auto;overflow:auto;padding:26px var(--shell-pad) 48px;}
+  .sheet{margin:0 auto;}
+  .stage{position:relative;}
+  .stage > .poster{
+    position:absolute;top:0;left:0;transform-origin:top left;
+    box-shadow:0 18px 50px -22px rgba(52,38,72,.45);border-radius:10px;
+  }
+  .empty{font-size:13px;color:var(--mute);padding:40px 0;text-align:center;}
+
+  /* ---------- the review note that rides under a poster ---------- */
+  .note{
+    margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:10px;
+    border-top:3px solid var(--amber-line);overflow:hidden;
+  }
+  .note.clean{border-top-color:rgba(69,104,169,.35);}
+  .note-head{display:flex;align-items:center;gap:10px;padding:14px 20px;}
+  .note-head .pill{
+    font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    padding:5px 10px;border-radius:99px;background:var(--amber-bg);color:var(--amber);
+  }
+  .note.clean .note-head .pill{background:rgba(69,104,169,.10);color:var(--blue);}
+  .note-head .ttl{font-size:13px;font-weight:700;}
+  .note-head .n{font-size:11.5px;color:var(--mute2);margin-left:auto;font-variant-numeric:tabular-nums;}
+  .note-body{padding:0 20px 18px;}
+  .note .sum{font-size:12.5px;line-height:1.6;color:var(--mute);margin:0 0 16px;}
+  .note h4{
+    font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--mute2);margin:16px 0 8px;
+  }
+  .note ul{margin:0;padding:0;list-style:none;}
+  .note li{
+    font-size:13px;line-height:1.55;color:#3b3f63;
+    padding:8px 0 8px 16px;border-top:1px solid var(--line);position:relative;
+  }
+  .note li:first-child{border-top:0;}
+  .note li::before{
+    content:"";position:absolute;left:0;top:15px;width:5px;height:5px;border-radius:50%;
+    background:#d69e3f;
+  }
+  .note li .why{display:block;font-size:11.5px;color:var(--mute2);margin-top:3px;}
+  .note li.num::before{background:var(--blue);}
+  .note li.bad::before{background:var(--coral);}
+  .note .kindtag{
+    font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--mute2);margin-left:7px;vertical-align:1px;
+  }
+  .note .foot{font-size:11.5px;line-height:1.5;color:var(--mute2);margin-top:16px;padding-top:13px;border-top:1px solid var(--line);}
+
+  /* ---------- the list of articles with no English abstract ---------- */
+  .list-wrap{flex:1 1 auto;overflow-y:auto;padding:30px var(--shell-pad) 70px;background:var(--bg);}
+  .list-inner{max-width:900px;margin:0 auto;}
+  .list-inner h2{font-size:20px;font-weight:700;margin:0 0 8px;}
+  .list-inner .lede{font-size:13.5px;line-height:1.6;color:var(--mute);margin:0 0 26px;max-width:640px;}
+  .grp{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:22px;overflow:hidden;}
+  .grp-head{padding:16px 22px;border-bottom:1px solid var(--line);}
+  .grp-head h3{font-size:13.5px;font-weight:700;margin:0 0 4px;}
+  .grp-head p{font-size:12px;line-height:1.5;color:var(--mute);margin:0;}
+  .art{display:flex;gap:16px;padding:15px 22px;border-top:1px solid var(--line);}
+  .art:first-of-type{border-top:0;}
+  .art .no{
+    flex:0 0 auto;font-size:11.5px;font-weight:700;color:var(--mute2);
+    font-variant-numeric:tabular-nums;padding-top:2px;min-width:26px;
+  }
+  .art .body{min-width:0;}
+  .art .h{font-size:13.5px;font-weight:500;line-height:1.45;margin:0 0 5px;}
+  .art .m{font-size:11.5px;line-height:1.5;color:var(--mute2);}
+  .art .m a{color:var(--blue);text-decoration:none;}
+  .art .m a:hover{text-decoration:underline;}
+  .art .flag{
+    display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    padding:3px 7px;border-radius:5px;background:rgba(69,104,169,.10);color:var(--blue);margin-left:8px;
+  }
+  @media (max-width:900px){
+    body{overflow:auto;}
+    main{flex-direction:column;}
+    .src{flex:0 0 auto;border-right:0;border-bottom:1px solid var(--line);}
+  }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <form class="gate-card" id="gateForm">
+    <img src="assets/logo/efferon-logo.svg" alt="Efferon">
+    <h1>Каталог постеров</h1>
+    <p>Постеры, собранные по абстрактам публикаций. Страница закрыта паролем — введите его, чтобы открыть.</p>
+    <label for="pw">Пароль</label>
+    <input id="pw" type="password" autocomplete="current-password" autofocus>
+    <button type="submit" id="go">Открыть</button>
+    <div class="gate-err" id="gateErr"></div>
+  </form>
+</div>
+
+<header hidden id="head">
+  <div class="brow">
+    <h1 class="t">Efferon · каталог постеров</h1>
+    <span class="sub">Слева абстракт-источник, справа постер, собранный из него.</span>
+  </div>
+  <nav class="tabs" id="tabs"></nav>
+</header>
+
+<main hidden id="main">
+  <section class="src" id="src"></section>
+  <section class="out">
+    <div class="out-bar">
+      <span class="lbl">Постер</span>
+      <span class="dims" id="dims"></span>
+      <div class="zoom" id="zoom">
+        <button data-z="fit" class="on">По ширине</button>
+        <button data-z="1">100%</button>
+      </div>
+    </div>
+    <div class="stage-scroll" id="scroll">
+      <div class="sheet" id="sheet">
+        <div class="stage" id="stage"></div>
+        <div id="note"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="list-wrap" hidden id="listView"><div class="list-inner" id="listInner"></div></div>
+
+<script type="module">
+import { renderPoster } from './js/poster-render.js?v=23';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let data = null, items = [], current = null, zoom = 'fit';
+
+/* ---------- the lock: PBKDF2 -> AES-GCM, the payload never ships in the clear ---------- */
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function unlock(password){
+  const env = await (await fetch('data/payload.json', {cache:'no-store'})).json();
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:b64(env.salt), iterations:env.iter, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, false, ['decrypt']);
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(env.iv)}, key, b64(env.data));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
+$('gateForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('go'), err = $('gateErr');
+  btn.disabled = true; err.textContent = ''; btn.textContent = 'Открываю…';
+  try{
+    data = await unlock($('pw').value);
+    sessionStorage.setItem('eff_poster_pw', $('pw').value);
+    start();
+  }catch{
+    err.textContent = 'Неверный пароль.';
+    btn.disabled = false; btn.textContent = 'Открыть';
+    $('pw').select();
+  }
+});
+
+/* a reload inside the same tab should not ask again */
+(async () => {
+  const saved = sessionStorage.getItem('eff_poster_pw');
+  if(!saved) return;
+  try{ data = await unlock(saved); start(); }catch{ sessionStorage.removeItem('eff_poster_pw'); }
+})();
+
+function start(){
+  $('gate').hidden = true;
+  $('head').hidden = false;
+  $('main').hidden = false;
+  items = data.items;
+  buildTabs();
+  select(items[0]);
+}
+
+/* ---------- tabs ---------- */
+const hasGaps = it => {
+  const r = it.review;
+  return !!r && (r.facts.length || r.numbers.length || r.altered.length || r.invented.length);
+};
+
+function buildTabs(){
+  const tabs = $('tabs');
+  tabs.innerHTML = '';
+  let gaps = 0;
+  items.forEach(it => {
+    if(hasGaps(it)) gaps++;
+    const b = document.createElement('button');
+    b.className = 'tab' + (hasGaps(it) ? ' gap' : '')
+                + (it.spec.template === 'descriptive' ? ' rev' : '');
+    b.textContent = it.no;
+    b.title = `№ ${it.no} · ${it.spec.template === 'descriptive' ? 'обзор' : 'исследование'}\n${it.title}`;
+    b.onclick = () => select(it);
+    b.dataset.no = it.no;
+    tabs.appendChild(b);
+  });
+
+  const c = document.createElement('span');
+  c.className = 'count';
+  c.textContent = `${items.length} постеров · R = обзор · точка = есть замечания (${gaps})`;
+  tabs.appendChild(c);
+
+  const sp = document.createElement('span'); sp.className = 'spacer'; tabs.appendChild(sp);
+
+  const m = data.missing || {noEnglish:[], englishNoPoster:[]};
+  const total = m.noEnglish.length + m.englishNoPoster.length;
+  const b = document.createElement('button');
+  b.className = 'tab wide';
+  b.textContent = `Статьи без английского абстракта (${m.noEnglish.length})`;
+  b.title = `${total} опубликованных статей остались без постера`;
+  b.dataset.no = 'list';
+  b.onclick = showList;
+  tabs.appendChild(b);
+}
+
+/* ---------- source pane ---------- */
+function parseSource(text){
+  const t = String(text || '').replace(/\r/g,'');
+  const i = t.search(/^Abstract:\s*$/m);
+  const head = i === -1 ? t : t.slice(0, i);
+  const body = i === -1 ? '' : t.slice(i).replace(/^Abstract:\s*/m,'').trim();
+  const fields = {};
+  head.split('\n').forEach(line => {
+    const m = line.match(/^([A-Za-z][A-Za-z ]+):\s*(.+)$/);
+    if(m) fields[m[1].trim()] = m[2].trim();
+  });
+  return {fields, body};
+}
+
+function renderSource(it){
+  const {fields, body} = parseSource(it.text);
+  const rows = [
+    ['Опубликовано', fields['Published in']],
+    ['Авторы',       fields['Authors']],
+    ['Устройство',   fields['Device'] || it.device],
+    ['DOI',          fields['DOI']],
+  ].filter(r => r[1]);
+
+  $('src').innerHTML = `
+    <div class="kicker">Абстракт-источник · № ${it.no}</div>
+    <h2>${esc(fields['Title'] || it.title)}</h2>
+    <div class="meta">
+      ${rows.map(([k,v]) => `<div>${esc(k)}: <span>${esc(v)}</span></div>`).join('')}
+      ${it.link ? `<div><a href="${esc(it.link)}" target="_blank" rel="noopener">Открыть статью ↗</a></div>` : ''}
+    </div>
+    <div class="abs-label">Абстракт</div>
+    <div class="abs">${body.split(/\n{2,}/).map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
+}
+
+/* ---------- the review note ----------
+   Layer 2 walked the abstract fact by fact and marked what the poster carries.
+   What it did not carry is what a reviewer needs to see, so that list is the
+   note; numbers are called out separately because a dropped number misleads
+   in a way a dropped phrase does not. */
+function renderNote(it){
+  const box = $('note');
+  const r = it.review;
+
+  if(!r || !r.checked){
+    box.innerHTML = `<div class="note clean"><div class="note-head">
+      <span class="pill">не проверялось</span>
+      <span class="ttl">Сверка с источником не проводилась</span></div></div>`;
+    return;
+  }
+
+  const clean = !(r.facts.length || r.numbers.length || r.altered.length || r.invented.length);
+  const sec = (title, list, cls) => list.length ? `
+    <h4>${esc(title)}</h4>
+    <ul>${list.map(x => typeof x === 'string'
+      ? `<li class="${cls}">${esc(x)}</li>`
+      : `<li class="${cls}">${esc(x.fact)}${x.kind ? `<span class="kindtag">${esc(x.kind)}</span>` : ''}${
+          x.note ? `<span class="why">${esc(x.note)}</span>` : ''}</li>`).join('')}</ul>` : '';
+
+  const n = r.facts.length + r.numbers.length + r.altered.length + r.invented.length;
+
+  box.innerHTML = `
+    <div class="note${clean ? ' clean' : ''}">
+      <div class="note-head">
+        <span class="pill">${clean ? 'всё на месте' : 'обратите внимание'}</span>
+        <span class="ttl">${clean
+          ? 'Постер передаёт абстракт полностью'
+          : 'Что есть в абстракте, но не попало на постер'}</span>
+        ${clean ? '' : `<span class="n">${n}</span>`}
+      </div>
+      <div class="note-body">
+        ${r.summary ? `<p class="sum">${esc(r.summary)}</p>` : ''}
+        ${sec('Числа, которых нет на постере', r.numbers, 'num')}
+        ${sec('Факты, которых нет на постере', r.facts, '')}
+        ${sec('Числа, изменённые относительно источника', r.altered, 'bad')}
+        ${sec('Утверждения, которых нет в источнике', r.invented, 'bad')}
+        <div class="foot">
+          Проверка автоматическая: текст абстракта и текст постера разобраны по фактам и сверены.
+          Это подсказка для вычитки, а не приговор — часть пропущенного опущена сознательно,
+          чтобы постер остался читаемым.${
+            r.layoutOk ? ' Вёрстка проверена отдельно: без наложений и обрезки.' : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---------- poster pane ---------- */
+function select(it){
+  current = it;
+  $('listView').hidden = true;
+  $('main').hidden = false;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.no === String(it.no)));
+  renderSource(it);
+  renderStage();
+  renderNote(it);
+  $('scroll').scrollTop = 0;
+  $('src').scrollTop = 0;
+}
+
+function renderStage(){
+  const stage = $('stage');
+  stage.innerHTML = '';
+  if(!current) return;
+  stage.appendChild(renderPoster(current.spec));
+  requestAnimationFrame(fit);
+}
+
+function fit(){
+  const stage = $('stage');
+  const el = stage.firstElementChild;
+  if(!el) return;
+  el.style.transform = 'none';                       // measure unscaled
+  const w = el.offsetWidth, h = el.offsetHeight;
+  const avail = $('scroll').clientWidth - 2 * parseFloat(getComputedStyle($('scroll')).paddingLeft);
+  const s = zoom === 'fit' ? Math.min(1, avail / w) : 1;
+  el.style.transform = `scale(${s})`;
+  stage.style.width  = (w * s) + 'px';
+  stage.style.height = (h * s) + 'px';
+  $('sheet').style.width = (w * s) + 'px';
+  $('dims').textContent = `${w} × ${h} px · ${Math.round(s * 100)}%`;
+}
+
+$('zoom').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  zoom = b.dataset.z;
+  document.querySelectorAll('#zoom button').forEach(x => x.classList.toggle('on', x === b));
+  fit();
+});
+window.addEventListener('resize', () => { if(!$('main').hidden) fit(); });
+document.fonts.ready.then(() => { if(!$('main').hidden) fit(); });
+
+/* ---------- articles that never became a poster ---------- */
+function showList(){
+  const m = data.missing || {noEnglish:[], englishNoPoster:[], publishedTotal:0};
+  $('main').hidden = true;
+  $('listView').hidden = false;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.no === 'list'));
+
+  const art = a => `
+    <div class="art">
+      <div class="no">${esc(a.no)}</div>
+      <div class="body">
+        <p class="h">${esc(a.title)}${a.russianOnly ? '<span class="flag">абстракт только по-русски</span>' : ''}</p>
+        <div class="m">
+          ${[a.journal, a.year].filter(Boolean).map(esc).join(' · ')}
+          ${a.authors ? ' · ' + esc(a.authors) : ''}
+          ${a.link ? ` · <a href="${esc(a.link)}" target="_blank" rel="noopener">статья ↗</a>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  $('listInner').innerHTML = `
+    <h2>Статьи без английского абстракта</h2>
+    <p class="lede">
+      Постер собирается только из английского абстракта: перевод означал бы, что на постер попадут
+      слова, которых в публикации нет. Поэтому эти работы остались вне каталога.
+      Всего опубликованных работ в таблице — ${esc(m.publishedTotal)}, постеров собрано — ${esc(items.length)}.
+    </p>
+
+    <div class="grp">
+      <div class="grp-head">
+        <h3>Английского абстракта нет — ${m.noEnglish.length}</h3>
+        <p>Чтобы сделать постер, нужен английский абстракт: взять из публикации либо написать и утвердить.</p>
+      </div>
+      ${m.noEnglish.map(art).join('') || '<div class="art"><div class="body"><p class="h">Нет таких.</p></div></div>'}
+    </div>
+
+    ${m.englishNoPoster.length ? `
+    <div class="grp">
+      <div class="grp-head">
+        <h3>Абстракт есть, постера нет — ${m.englishNoPoster.length}</h3>
+        <p>Текст в таблице лежит в другой строке той же публикации, поэтому сборка его не увидела. Постер можно сделать хоть сейчас.</p>
+      </div>
+      ${m.englishNoPoster.map(art).join('')}
+    </div>` : ''}`;
+
+  $('listView').scrollTop = 0;
+}
+
+/* ---------- keyboard ---------- */
+window.addEventListener('keydown', e => {
+  if(!data || $('listView').hidden === false) return;
+  if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  const i = items.indexOf(current);
+  const j = e.key === 'ArrowRight' ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0);
+  if(j !== i) select(items[j]);
+});
+</script>
+</body>
+</html>
