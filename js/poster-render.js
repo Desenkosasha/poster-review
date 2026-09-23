@@ -49,8 +49,13 @@ function cap(s) {
 function valueKind(v) {
   const t = String(v ?? '').trim();
   if (!t) return 'num';
-  const looksNumeric = /^[^\p{L}]*\d/u.test(t) && t.length <= 14;
-  if (looksNumeric) return 'num';        // 18.5-fold, 2.5, 87%, 24-72 h
+  /* A value that STARTS with a figure is a figure, even when a comparison trails
+     it: the 14-character limit set "8 vs 11 days" as a number and "16.5 vs 19.5
+     days" as a phrase, so two cards in the same row disagreed about their own
+     type. The card splits the leading number from the rest and sets the rest
+     small, so a longer tail costs nothing until it stops being a figure at all. */
+  const looksNumeric = /^[^\p{L}]*\d/u.test(t) && t.length <= 26;
+  if (looksNumeric) return 'num';        // 18.5-fold, 2.5, 87%, 24-72 h, 7 vs 12 days
   if (t.length <= 14) return 'word';     // Reduced, No change
   return 'phrase';                       // a statement, set as reading copy
 }
