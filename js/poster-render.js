@@ -315,8 +315,13 @@ function resultsHTML(poster) {
     // card is stretched to the chart's height, so its number is centred in the
     // card rather than left sitting under the heading above 200px of empty tint.
     const mixed = row.some((c) => c.plot) && row.some((c) => !c.plot) ? ' mixed' : '';
+    // A single figure with no chart beside it: stretched across the poster it is a
+    // wide box with a number in one corner. Laid out as a hero band instead, the
+    // figure sits big on the left with its note beside it, and the width is the
+    // point rather than the problem.
+    const solo = row.length === 1 && !row[0].plot ? ' solo' : '';
     const cards = row.map((c) => statCard(c.chart, c.metric, { frac: c.w / span })).join('');
-    return `<div class="stats${cls}${mixed}" style="grid-template-columns:repeat(${span},1fr)">` +
+    return `<div class="stats${cls}${mixed}${solo}" style="grid-template-columns:repeat(${span},1fr)">` +
       cards + `</div>`;
   };
 

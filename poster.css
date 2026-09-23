@@ -283,6 +283,19 @@
    so two centred figures in one row land on one line. */
 .poster .stats.mixed .stat:not(:has(.chartwrap)):not(:has(.donut-wrap)):not(:has(.rsub))::after{
   content:"";display:block;margin-top:auto;height:26px;}
+
+/* ---- the hero band: one figure, the width of the poster ---- */
+/* A lone figure card used to be a full-width box with its number in the top left
+   corner and a hand's width of empty tint to the right. Here the card turns on
+   its side: heading across the top, the figure big at the left, its note reading
+   beside it rather than under it. */
+.poster .stats.solo .stat{display:grid;grid-template-columns:auto 1fr;align-items:center;
+  gap:2px 30px;padding:20px 24px 22px;}
+.poster .stats.solo .stat .rk{grid-column:1/-1;min-height:0;margin-bottom:6px;}
+.poster .stats.solo .stat .rv{margin-top:0;min-height:0;}
+.poster .stats.solo .stat .rv .num{font-size:clamp(52px,6.5cqw,104px);}
+.poster .stats.solo .stat .rsub{margin-top:0;padding-top:0;border-top:0;font-size:13.5px;
+  line-height:1.5;max-width:52ch;}
 .poster .stat .rv{flex:0 0 auto;}
 .poster .stat .rsub b{font-weight:500;color:var(--ink);}
 
