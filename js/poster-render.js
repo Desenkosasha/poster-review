@@ -171,7 +171,7 @@ function legendHTML(chart) {
  * The card keeps the `.stat` class name: js/poster-verify.js counts result cards
  * with it, and poster.css carries guards against carousel rules that target it.
  */
-function statCard(chart, metric) {
+function statCard(chart, metric, opts = {}) {
   const title = (chart && chart.title) || (metric && metric.label) || '';
   const sub = (chart && chart.sub) || (metric && metric.sub) || '';
   const value = (metric && metric.value) || (chart && chart.value) || '';
@@ -196,7 +196,7 @@ function statCard(chart, metric) {
   if (hasPlot) {
     chartBody = (chart.type === 'donut')
       ? `<div class="donut-wrap">${donutBlock(chart)}</div>`
-      : `<div class="chartwrap">${posterChartSVG(chart, { showTitle: false })}</div>`;
+      : `<div class="chartwrap">${posterChartSVG(chart, { showTitle: false, frac: opts.frac })}</div>`;
   }
 
   // The set: label + figure pairs on one shared baseline inside a single card.
@@ -249,6 +249,7 @@ function resultsHTML(poster) {
     return true;                                  // a real plot type draws itself
   };
   const drawable = charts.filter(renderable);
+  const cols0 = results.columns || 3;
 
   const plotted = drawable.filter((c) => c.type && c.type !== 'stat' && c.type !== 'values');
   const figures = drawable.filter((c) => !plotted.includes(c));
@@ -257,21 +258,84 @@ function resultsHTML(poster) {
   // what she asked for, but a plot card is 2–3× a figure card, so mixing them in
   // one grid stretched "7 vs 12 days" to 400px and left 260px of empty tint inside
   // it. Two grids: figures equalise against figures, plots against plots.
-  let figureCards = '';
-  metrics.forEach((m) => { figureCards += statCard(null, m); });
-  figures.forEach((c) => { figureCards += statCard(c, null); });
-  const plotCards = plotted.map((c) => statCard(c, null)).join('');
+  // A card carries its own width weight: 1 normally, chart.span when the spec
+  // asks for a wide one. Rows are packed by weight, so a spanning card cannot
+  // overflow the row it lands in. The HTML is rendered only once the row is
+  // known, because a chart needs to know how wide its card will be.
+  const weight = (c) => Math.max(1, Math.min(cols0, (c && c.span) || 1));
+  const figureCards = [
+    ...metrics.map((m) => ({ metric: m, chart: null, w: 1, plot: false })),
+    ...figures.map((c) => ({ metric: null, chart: c, w: weight(c), plot: false })),
+  ];
+  const plotCards = plotted.map((c) => ({ metric: null, chart: c, w: weight(c), plot: true }));
 
   const head = results.note
     ? `<div class="results-head"><span class="results-pill">Results</span>` +
       `<div class="results-note">${richText(results.note)}</div></div>`
     : '';
 
-  const cols = results.columns || 3;
-  const gridStyle = cols !== 3 ? ` style="grid-template-columns:repeat(${cols},1fr)"` : '';
-  const figureGrid = figureCards ? `<div class="stats"${gridStyle}>${figureCards}</div>` : '';
-  const plotGrid = plotCards ? `<div class="stats plots"${gridStyle}>${plotCards}</div>` : '';
-  return `<div class="results">${head}${figureGrid}${plotGrid}</div>`;
+  /* Rows are built explicitly, one grid per row, because a grid with a FIXED
+     column count punches a hole the moment the cards do not fill it: two cards in
+     a three-column row left a third of the row as bare page, and a lone plot card
+     left two thirds of it empty under the numbers. That hole is what she kept
+     pointing at. Balanced rows (five cards become 3 + 2, each row a grid of
+     exactly its own width) are full by construction, and a row of two reads as
+     two wide cards rather than two cards and a gap. */
+  const rowsOf = (cards) => {
+    const out = [];
+    let row = [], w = 0;
+    cards.forEach((c) => {
+      if (row.length && w + c.w > cols0) { out.push(row); row = []; w = 0; }
+      row.push(c); w += c.w;
+    });
+    if (row.length) out.push(row);
+    // Balance the tail: 4 cards in 3 columns would be 3 + 1, which is a hole with
+    // extra steps. Re-cut into rows of near-equal length instead (2 + 2).
+    if (out.length > 1 && out[out.length - 1].length < out[0].length &&
+        cards.every((c) => c.w === 1)) {
+      const n = cards.length, rows = out.length, cut = [];
+      let i = 0;
+      for (let r = 0; r < rows; r++) {
+        const take = Math.ceil((n - i) / (rows - r));
+        cut.push(cards.slice(i, i + take));
+        i += take;
+      }
+      return cut;
+    }
+    return out;
+  };
+  const gridRow = (row, cls) => {
+    const span = row.reduce((a, c) => a + c.w, 0);
+    // A row holding BOTH a chart and a plain figure is marked `mixed`: the figure
+    // card is stretched to the chart's height, so its number is centred in the
+    // card rather than left sitting under the heading above 200px of empty tint.
+    const mixed = row.some((c) => c.plot) && row.some((c) => !c.plot) ? ' mixed' : '';
+    const cards = row.map((c) => statCard(c.chart, c.metric, { frac: c.w / span })).join('');
+    return `<div class="stats${cls}${mixed}" style="grid-template-columns:repeat(${span},1fr)">` +
+      cards + `</div>`;
+  };
+
+  /* Figures and plots normally get their own rows: a plot card is 2-3x the height
+     of a figure card, and mixing them in one grid stretched "7 vs 12 days" into
+     400px of empty tint. When everything fits in a SINGLE row, that stretch is the
+     thing she asked for instead: the numbers stand at the chart's full height, one
+     row, one baseline, no gap. A lone chart is allowed a fourth seat in that row,
+     because a chart on a row of its own is stretched the width of the poster and
+     its bars cannot fill it. */
+  const totalW = figureCards.reduce((a, c) => a + c.w, 0) + plotCards.reduce((a, c) => a + c.w, 0);
+  const rowMax = plotCards.length === 1 && totalW === cols0 + 1 ? cols0 + 1 : cols0;
+  /* A single figure card on a row of its own would be stretched the full width of
+     the poster for the sake of one number. When there are plots to keep it
+     company it joins their sequence instead, and the rows balance (1 + 3 becomes
+     2 + 2) with the figure centred against the chart beside it. */
+  const lonelyFigure = figureCards.length === 1 && plotCards.length >= 2;
+  const body = totalW <= rowMax
+    ? gridRow([...figureCards, ...plotCards], plotCards.length ? ' plots' : '')
+    : lonelyFigure
+      ? rowsOf([...figureCards, ...plotCards]).map((r) => gridRow(r, ' plots')).join('')
+      : rowsOf(figureCards).map((r) => gridRow(r, '')).join('') +
+        rowsOf(plotCards).map((r) => gridRow(r, ' plots')).join('');
+  return `<div class="results">${head}${body}</div>`;
 }
 
 /* ================= brand charts (native inline SVG) ================= */
@@ -313,8 +377,8 @@ function resultsHTML(poster) {
  */
 export function posterChartSVG(chart, opts = {}) {
   const type = (chart && chart.type) || 'line';
-  if (type === 'bars') return barsSVG(chart);
-  if (type === 'grouped') return groupedBarsSVG(chart);
+  if (type === 'bars') return barsSVG(chart, opts);
+  if (type === 'grouped') return groupedBarsSVG(chart, opts);
   if (type === 'km') return kmSVG(chart);
   // 'donut' is rendered by the card (donutBlock); fall through to line for it
   // only if it ever reaches here without donuts.
@@ -444,19 +508,39 @@ function donutBlock(chart) {
 
 /* ---------- vertical bars ---------- */
 
-function barsSVG(chart) {
+/* How much wider than a one-third card this chart's card is. Both bar
+   primitives are drawn in a near-square viewBox sized for a third of the poster;
+   dropped into a half or full-width card, `meet` scaling letterboxed them and
+   left bare tint on either side of the bars. Stretching the viewBox by the same
+   factor as the card keeps the bars filling their card instead. */
+/* SVG text is set in Gotham Pro, which has no superscript two: "mL/m²" came out
+   as a tofu box on the pancreatitis poster. The character is rebuilt as a raised
+   tspan instead, so the unit reads correctly whatever the font carries. */
+function svgText(v) {
+  return escapeHtml(String(v == null ? '' : v))
+    .replace(/²/g, '<tspan baseline-shift="super" font-size="68%">2</tspan>')
+    .replace(/³/g, '<tspan baseline-shift="super" font-size="68%">3</tspan>');
+}
+
+function widthFactor(opts) {
+  const frac = (opts && opts.frac) || 1 / 3;
+  return Math.max(1, Math.min(2.2, frac * 3));
+}
+
+function barsSVG(chart, opts = {}) {
   const bars = chart.bars || [];
   const unit = chart.unit || '';
   // Taller-than-wide viewBox so the chart fills a narrow (span-1) card and the
   // bars read big; plot leaves room for the value on top and label+note below.
-  const W = 300, H = 280, plotT = 52, plotB = H - 66;
+  const k = widthFactor(opts);
+  const W = Math.round(300 * k), plotT = 52, plotB = 214;
   const max = chart.max || Math.max(1, ...bars.map((b) => b.value)) * 1.18;
   const n = Math.max(bars.length, 1);
   const yAt = (v) => plotB - (v / max) * (plotB - plotT);
   // Centre the bar GROUP in the viewBox (equal left/right margins) so it always
   // reads centred in the card, regardless of the card's width.
-  const gap = 44;
-  const bw = Math.min(92, (W - 40 - gap * (n - 1)) / n);
+  const gap = 44 * k;
+  const bw = Math.min(92 * k, (W - 40 * k - gap * (n - 1)) / n);
   const groupW = n * bw + (n - 1) * gap;
   const startX = (W - groupW) / 2;
 
@@ -466,6 +550,21 @@ function barsSVG(chart) {
   const widestLabel = Math.max(1, ...bars.map((b) =>
     Math.max(1, ...wrapLabel(b.label, 12).map((l) => l.length))));
   const labFs = Math.max(11.5, Math.min(18, slot / (widestLabel * 0.54)));
+
+  /* The bar note used to be drawn at a FIXED offset under the axis, on the
+     assumption that a bar label is one line. A two-line label ("Died on days /
+     4 and 8") then ran straight through it, and on the septic-shock poster
+     "most severe baseline parameters" sat on top of its own axis labels. Labels
+     and notes are now stacked in order and the canvas grows to hold them, so
+     nothing below the axis can collide. */
+  const NOTE_FS = 13;
+  const labelLines = bars.map((b) => wrapLabel(b.label, 12));
+  const noteLines = bars.map((b) => (b.note ? wrapLabel(String(b.note), 16) : []));
+  const labRows = Math.max(1, ...labelLines.map((l) => l.length));
+  const noteRows = Math.max(0, ...noteLines.map((l) => l.length));
+  const labelsBottom = plotB + 28 + (labRows - 1) * (labFs + 4);
+  const noteTop = labelsBottom + NOTE_FS + 8;
+  const H = (noteRows ? noteTop + (noteRows - 1) * (NOTE_FS + 3) : labelsBottom) + 16;
 
   let out = `<line x1="${(startX - 14).toFixed(1)}" y1="${plotB}" x2="${(startX + groupW + 14).toFixed(1)}" y2="${plotB}" stroke="rgba(43,47,86,.18)" stroke-width="1.5"/>`;
   bars.forEach((b, i) => {
@@ -479,23 +578,25 @@ function barsSVG(chart) {
     // Labels are centred under each bar, so a long unbreakable one (e.g.
     // "b2-microglobulin") ran into its neighbours. Shrink the label type until
     // the widest line fits the per-bar slot rather than overlapping.
-    const lines = wrapLabel(b.label, 12);
-    lines.forEach((ln, k) => {
+    labelLines[i].forEach((ln, k) => {
       out += `<text x="${cx.toFixed(1)}" y="${(plotB + 28 + k * (labFs + 4)).toFixed(1)}" text-anchor="middle" font-size="${labFs.toFixed(1)}" fill="#7d7d93" ${SVG_FONT}>${escapeHtml(ln)}</text>`;
     });
-    if (b.note) out += `<text x="${cx.toFixed(1)}" y="${(plotB + 54).toFixed(1)}" text-anchor="middle" font-size="15" fill="#b3b3c1" ${SVG_FONT}>${escapeHtml(b.note)}</text>`;
+    noteLines[i].forEach((ln, k) => {
+      out += `<text x="${cx.toFixed(1)}" y="${(noteTop + k * (NOTE_FS + 3)).toFixed(1)}" text-anchor="middle" font-size="${NOTE_FS}" fill="#b3b3c1" ${SVG_FONT}>${escapeHtml(ln)}</text>`;
+    });
   });
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(chart.title || 'bars')}">${out}</svg>`;
 }
 
 /* ---------- grouped before/after bars (one or several metric groups) ---------- */
 
-function groupedBarsSVG(chart) {
+function groupedBarsSVG(chart, opts = {}) {
   const groups = chart.groups || [{ name: '', unit: chart.unit || '', series: chart.series || [] }];
   const xlabels = chart.xlabels || [];
   // H grew from 262 to 288 to fit a SECOND group-label line (unit / p-value);
   // plotB keeps the same plot geometry, the extra space is all below the axis.
-  const W = 640, H = 288, plotL = 14, plotR = W - 14, plotT = 42, plotB = 208;
+  const kw = widthFactor(opts);
+  const W = Math.round(640 * kw), H = 288, plotL = 14, plotR = W - 14, plotT = 42, plotB = 208;
   /* Scale PER GROUP when the groups have their own units, globally when they
      share one. A single scale across CRP in mg/L (189), IL-6 in pg/mL (700) and
      TNF-alpha in pg/mL (19) squashed the TNF pair into two hairlines: bars that
@@ -536,14 +637,14 @@ function groupedBarsSVG(chart) {
       const pts = s.points || [];
       const nPts = Math.max(pts.length, 1);
       const slot = subW / nPts;
-      const bw = Math.min(42, slot * 0.6);
+      const bw = Math.min(42 * kw, slot * 0.6);
       pts.forEach((v, pi) => {
         const cx = sx0 + slot * (pi + 0.5);
         const y = yAt(v);
         out += `<rect x="${(cx - bw / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${(plotB - y).toFixed(1)}" rx="6" fill="${col}"/>`;
         out += `<text x="${cx.toFixed(1)}" y="${(y - 9).toFixed(1)}" text-anchor="middle" font-size="16" font-weight="700" fill="${col}" ${SVG_FONT}>${escapeHtml(String(v))}</text>`;
         const xl = xlabels[pi] != null ? xlabels[pi] : '';
-        out += `<text x="${cx.toFixed(1)}" y="${(plotB + 20).toFixed(1)}" text-anchor="middle" font-size="14" fill="#7d7d93" ${SVG_FONT}>${escapeHtml(xl)}</text>`;
+        out += `<text x="${cx.toFixed(1)}" y="${(plotB + 20).toFixed(1)}" text-anchor="middle" font-size="14" fill="#7d7d93" ${SVG_FONT}>${svgText(xl)}</text>`;
       });
     });
     // group name + unit centred beneath the cluster
@@ -552,7 +653,7 @@ function groupedBarsSVG(chart) {
        (a p-value, say) beneath it. One long line ran into the neighbouring
        group's label and the three names collided into unreadable mush. The font
        also steps down when a cluster is narrow. */
-    const fs = groupW && groupW < 150 ? 13 : 15;
+    const fs = groupW && groupW < 150 * kw ? 13 : 15;
     /* When the groups carry DIFFERENT series labels (each group its own p-value)
        the shared legend is suppressed — see legendHTML — so the label has to ride
        under its own group, or the figure loses it entirely. */
@@ -561,10 +662,10 @@ function groupedBarsSVG(chart) {
     const note = [g.unit || '', perGroup ? ((g.series || [])[0] || {}).name || '' : '']
       .filter(Boolean).join(' · ');
     if (g.name) {
-      out += `<text x="${gcx.toFixed(1)}" y="${(plotB + 42).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="#2b2f56" ${SVG_FONT}>${escapeHtml(g.name)}</text>`;
+      out += `<text x="${gcx.toFixed(1)}" y="${(plotB + 42).toFixed(1)}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="#2b2f56" ${SVG_FONT}>${svgText(g.name)}</text>`;
     }
     if (note) {
-      out += `<text x="${gcx.toFixed(1)}" y="${(plotB + (g.name ? 62 : 42)).toFixed(1)}" text-anchor="middle" font-size="${fs - 2}" fill="#7d7d93" ${SVG_FONT}>${escapeHtml(note)}</text>`;
+      out += `<text x="${gcx.toFixed(1)}" y="${(plotB + (g.name ? 62 : 42)).toFixed(1)}" text-anchor="middle" font-size="${fs - 2}" fill="#7d7d93" ${SVG_FONT}>${svgText(note)}</text>`;
     }
   });
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(chart.title || 'grouped bars')}">${out}</svg>`;

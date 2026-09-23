@@ -259,6 +259,20 @@
    card reads as air inside the card instead of a hole beside it. */
 .poster .stat .rsub{font-weight:400;font-size:11.5px;line-height:1.4;color:var(--mute);
   margin-top:auto;padding-top:9px;border-top:1px solid rgba(43,47,86,.09);}
+/* A figure card sharing a row with a chart is as tall as the chart. Left
+   top-anchored, its number sat under the heading with a hand's width of empty
+   tint below it, which reads as the same hole the row layout just removed.
+   In a mixed row the figure floats to the card's middle instead; the chart card
+   is untouched, and an all-figures row keeps its locked top baseline. */
+.poster .stats.mixed .stat:not(:has(.chartwrap)):not(:has(.donut-wrap)) .rv,
+.poster .stats.mixed .stat:not(:has(.chartwrap)):not(:has(.donut-wrap)) .rvset{
+  margin-top:auto;margin-bottom:auto;}
+/* A figure card with no footnote has one auto margin fewer than its neighbour,
+   so the same centring put its number a line higher than the card next to it.
+   The empty tail restores the missing slot: invisible, exactly a footnote tall,
+   so two centred figures in one row land on one line. */
+.poster .stats.mixed .stat:not(:has(.chartwrap)):not(:has(.donut-wrap)):not(:has(.rsub))::after{
+  content:"";display:block;margin-top:auto;height:26px;}
 .poster .stat .rv{flex:0 0 auto;}
 .poster .stat .rsub b{font-weight:500;color:var(--ink);}
 
